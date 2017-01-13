@@ -1,0 +1,44 @@
+//
+//  NSDictionary+safeObjectForKey.m
+//  ZhangcaiLicaishi
+//
+//  Created by Wujg on 15/4/15.
+//  Copyright (c) 2015年 hetang. All rights reserved.
+//
+
+#import "NSDictionary+safeObjectForKey.h"
+
+@implementation NSDictionary (safeObjectForKey)
+
+/*!返回一个安全的可变字典*/
++ (NSMutableDictionary *)safeDictionary:(NSDictionary *)dict
+{
+    NSMutableDictionary *safeDict = [[NSMutableDictionary alloc] initWithCapacity:[dict count]];
+    
+    NSEnumerator * enumerator = [dict keyEnumerator];
+    
+    id key;
+    while(key = [enumerator nextObject]) {
+        
+        id obj = [dict safeObjectForKey:key];//检查Null
+        if (nil != obj) {
+            [safeDict setObject:obj forKey:key];
+        } else {
+            [safeDict setObject:@"" forKey:key];
+        }
+    }
+    
+    return safeDict;
+}
+
+/*!通过key检查value是否为NSNull*/
+- (NSString *)safeObjectForKey:(id)key
+{
+    id obj = [self objectForKey:key];
+    if ([obj isKindOfClass:[NSDictionary class]] || [obj isKindOfClass:[NSArray class]]) {
+        return obj;
+    }
+    return checkNull([self objectForKey:key]);
+}
+
+@end

@@ -1,0 +1,86 @@
+//
+//  UIImageView+Swizzle.m
+//  RRArt-iOS
+//
+//  Created by wtj on 16/5/11.
+//  Copyright © 2016年 YiBei. All rights reserved.
+//
+
+#import "UIImageView+Swizzle.h"
+#import "ObjcRuntime.h"
+#import <ImageIO/ImageIO.h>
+
+@implementation UIImageView (Swizzle)
+
++(void)load{
+    
+    Swizzle([UIImageView class], @selector(sd_setImageWithURL:placeholderImage:), @selector(wtj_setImageWithURL:placeholderImage:));
+    
+}
+
+- (void)wtj_setImageWithURL:(NSURL *)url placeholderImage:(UIImage *)placeholder{
+    
+    if (url ==nil) {
+        self.image = placeholder;
+        
+    }else{
+        if ([url.absoluteString.lowercaseString rangeOfString:@".gif"].location !=NSNotFound ) {
+            ESWeakSelf;
+            [self wtj_animatedGIF:url andBackImage:^(UIImage *image) {
+                __weakSelf.image=image;
+            }];
+            
+        }else{
+            
+            [self wtj_setImageWithURL:url placeholderImage:placeholder];
+        }
+        
+    }
+    
+}
+
+- (void)wtj_animatedGIF:(NSURL *)url andBackImage:(void (^)(UIImage *))Icon{
+    
+    __block UIImage *image=nil;
+    ESWeakSelf;
+    
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+        
+        image = [__weakSelf wtj_setGIFImage:url];
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            Icon(image);
+            
+        });
+    });
+    
+}
+
+- (UIImage *)wtj_setGIFImage:(NSURL *)url{
+    
+    if (url ==nil) {
+        return  nil;
+    }
+    
+    CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef)[NSData dataWithContentsOfURL:url], NULL);
+    
+    size_t count = CGImageSourceGetCount(source);
+    
+    UIImage *animatedImage;
+    
+    if (count <= 1) {
+        
+        animatedImage = [[UIImage alloc] initWithData:[NSData dataWithContentsOfURL:url]];
+    }else{
+        CGImageRef image = CGImageSourceCreateImageAtIndex(source, 0, NULL);
+        
+        animatedImage=[UIImage imageWithCGImage:image];
+    }
+    
+    CFRelease(source);
+    
+    return animatedImage;
+}
+
+@end
