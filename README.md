@@ -1,2 +1,2 @@
 # textdemo
-简单测试，转盘抽奖demo
+Masonry的简单使用，用于纯代码cell的布局方式
